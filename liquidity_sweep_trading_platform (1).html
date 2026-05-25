@@ -490,17 +490,33 @@ function randBool(prob=0.5){ return Math.random()<prob; }
 function fmt(n,d=2){ return n.toFixed(d); }
 function fmtUSD(n){ return (n>=0?'+':'')+n.toFixed(2); }
 
-function genPrice(pair) {
-  const base = {BTC:67000,ETH:3100,BNB:420,SOL:165,XRP:0.62,DOGE:0.18,ADA:0.51,
-    AVAX:34,LINK:15,DOT:7.5,MATIC:0.85,LTC:78,UNI:9.2,ATOM:9.8,FTM:0.72,
-    NEAR:6.4,AAVE:92,SHIB:0.000022,TRX:0.14,XLM:0.12,VET:0.048,ALGO:0.21,
-    MANA:0.48,SAND:0.52,AXS:7.2,CRV:0.38,COMP:44,MKR:2400,SNX:2.1,YFI:6200,
-    SUSHI:1.1,'1INCH':0.38,RUNE:2.4,ENJ:0.22,CHZ:0.12,ANKR:0.028,COTI:0.082,
-    GRT:0.19,BAT:0.21,STORJ:0.52,ZRX:0.33,INJ:22};
-  const sym = pair.replace('USDT','');
-  const b = base[sym] || 1;
-  return +(b*(1+rnd(-0.015,0.015))).toFixed(sym==='SHIB'?8:sym==='BTC'?2:4);
+const priceCache = {};
+
+async function fetchRealPrice(pair) {
+  try {
+    const res = await fetch(
+      `https://api.binance.com/api/v3/ticker/price?symbol=${pair}`
+    );
+    const data = await res.json();
+    priceCache[pair] = parseFloat(data.price);
+    return priceCache[pair];
+  } catch(e) {
+    return priceCache[pair] || 1;
+  }
 }
+
+function genPrice(pair) {
+  return priceCache[pair] || 1;
+}
+
+async function loadAllPrices() {
+  await Promise.all(PAIRS.map(p => fetchRealPrice(p)));
+  renderSignals();
+  renderPairsTable();
+}
+
+loadAllPrices();
+setInterval(loadAllPrices, 10000);
 
 function genSignal(pair){
   const price = genPrice(pair);
