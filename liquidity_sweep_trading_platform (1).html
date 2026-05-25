@@ -1,0 +1,782 @@
+
+<h2 class="sr-only">Liquidity Sweep SELL Strategy — Binance Futures Trading Platform with live dashboard, signal detection, and backtesting engine</h2>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+
+:root {
+  --bg: var(--color-background-primary);
+  --bg2: var(--color-background-secondary);
+  --bg3: var(--color-background-tertiary);
+  --t1: var(--color-text-primary);
+  --t2: var(--color-text-secondary);
+  --t3: var(--color-text-tertiary);
+  --bdr: var(--color-border-tertiary);
+  --bdr2: var(--color-border-secondary);
+  --success: var(--color-text-success);
+  --danger: var(--color-text-danger);
+  --warn: var(--color-text-warning);
+  --info: var(--color-text-info);
+  --bg-success: var(--color-background-success);
+  --bg-danger: var(--color-background-danger);
+  --bg-warn: var(--color-background-warning);
+  --bg-info: var(--color-background-info);
+  --radius: var(--border-radius-md);
+  --radius-lg: var(--border-radius-lg);
+  --red: #E24B4A; --green: #639922; --amber: #BA7517; --blue: #185FA5;
+  --red-bg: #FCEBEB; --green-bg: #EAF3DE; --amber-bg: #FAEEDA; --blue-bg: #E6F1FB;
+}
+
+.platform { width: 100%; min-height: 600px; }
+.nav { display: flex; align-items: center; gap: 4px; padding: 10px 0 14px; border-bottom: 0.5px solid var(--bdr); margin-bottom: 16px; }
+.nav-brand { font-size: 13px; font-weight: 500; color: var(--t1); margin-right: 12px; display: flex; align-items: center; gap: 6px; }
+.nav-brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.tab { padding: 6px 14px; font-size: 13px; border-radius: var(--radius); border: 0.5px solid transparent; cursor: pointer; background: transparent; color: var(--t2); transition: all 0.15s; }
+.tab:hover { background: var(--bg2); color: var(--t1); }
+.tab.active { background: var(--bg2); color: var(--t1); border-color: var(--bdr2); font-weight: 500; }
+
+.section { display: none; }
+.section.active { display: block; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+
+.card { background: var(--bg); border: 0.5px solid var(--bdr); border-radius: var(--radius-lg); padding: 14px 16px; }
+.card-sm { padding: 10px 14px; }
+.metric { background: var(--bg2); border-radius: var(--radius); padding: 12px 14px; }
+.metric .label { font-size: 12px; color: var(--t2); margin-bottom: 4px; }
+.metric .value { font-size: 22px; font-weight: 500; color: var(--t1); }
+.metric .sub { font-size: 11px; color: var(--t3); margin-top: 2px; }
+
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+.badge.sell { background: var(--red-bg); color: var(--red); }
+.badge.buy { background: var(--green-bg); color: var(--green); }
+.badge.live { background: var(--red-bg); color: var(--red); }
+.badge.pending { background: var(--amber-bg); color: var(--amber); }
+.badge.win { background: var(--green-bg); color: var(--green); }
+.badge.loss { background: var(--red-bg); color: var(--red); }
+
+select, input[type=number], input[type=text] { background: var(--bg); border: 0.5px solid var(--bdr2); border-radius: var(--radius); padding: 6px 10px; font-size: 13px; color: var(--t1); font-family: var(--font-sans); width: 100%; }
+select:focus, input:focus { outline: none; border-color: var(--blue); }
+label { font-size: 12px; color: var(--t2); display: block; margin-bottom: 4px; }
+
+.btn { padding: 7px 16px; border-radius: var(--radius); border: 0.5px solid var(--bdr2); background: transparent; color: var(--t1); font-size: 13px; cursor: pointer; font-family: var(--font-sans); transition: all 0.15s; }
+.btn:hover { background: var(--bg2); }
+.btn.primary { background: var(--t1); color: var(--bg); border-color: var(--t1); }
+.btn.primary:hover { opacity: 0.85; }
+.btn.danger { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+
+.signal-row { display: grid; grid-template-columns: 80px 90px 70px 80px 80px 80px 80px 1fr; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 0.5px solid var(--bdr); font-size: 12px; }
+.signal-row:last-child { border-bottom: none; }
+.signal-row:hover { background: var(--bg2); }
+.signal-header { font-weight: 500; color: var(--t2); font-size: 11px; }
+.pair-name { font-weight: 500; color: var(--t1); font-size: 13px; }
+.tf-chip { background: var(--bg2); border-radius: 4px; padding: 2px 6px; font-size: 11px; color: var(--t2); display: inline-block; }
+
+.chart-area { height: 200px; position: relative; }
+
+.progress-bar { height: 6px; background: var(--bg2); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { text-align: left; padding: 8px 10px; color: var(--t2); font-weight: 500; border-bottom: 0.5px solid var(--bdr); font-size: 11px; }
+td { padding: 8px 10px; border-bottom: 0.5px solid var(--bdr); color: var(--t1); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--bg2); }
+
+.row-gap { display: flex; gap: 12px; align-items: flex-start; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-field { display: flex; flex-direction: column; gap: 4px; }
+
+.alert-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 0.5px solid var(--bdr); border-radius: var(--radius); margin-bottom: 8px; }
+.alert-item.new { border-color: var(--red); background: var(--red-bg); animation: alertPop 0.4s ease; }
+@keyframes alertPop { from{transform:scale(0.97);opacity:0} to{transform:scale(1);opacity:1} }
+
+.candle-vis { display: flex; gap: 8px; align-items: flex-end; justify-content: center; padding: 16px 0; }
+.candle { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.candle-label { font-size: 10px; color: var(--t2); }
+.candle-body { width: 24px; border-radius: 2px; }
+.candle-wick { width: 2px; border-radius: 1px; }
+
+.section-title { font-size: 15px; font-weight: 500; color: var(--t1); margin-bottom: 12px; }
+.section-sub { font-size: 12px; color: var(--t2); margin-bottom: 16px; }
+.divider { height: 0.5px; background: var(--bdr); margin: 16px 0; }
+.stat-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 0.5px solid var(--bdr); font-size: 13px; }
+.stat-row:last-child { border-bottom: none; }
+.stat-row .sname { color: var(--t2); }
+.stat-row .sval { font-weight: 500; color: var(--t1); }
+.green-val { color: var(--green); }
+.red-val { color: var(--red); }
+.amber-val { color: var(--amber); }
+
+.ticker-strip { display: flex; gap: 24px; overflow: hidden; padding: 8px 0; border-top: 0.5px solid var(--bdr); border-bottom: 0.5px solid var(--bdr); margin-bottom: 16px; }
+.ticker-item { display: flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; color: var(--t2); }
+.ticker-item .p { font-weight: 500; color: var(--t1); }
+.ticker-item .chg { font-size: 11px; }
+
+.cond-check { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12px; }
+.cond-check .icon { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+.cond-check .ok { background: var(--green-bg); color: var(--green); }
+.cond-check .fail { background: var(--red-bg); color: var(--red); }
+.cond-check .label { color: var(--t1); }
+</style>
+
+<div class="platform">
+  <div class="nav">
+    <div class="nav-brand">
+      <span class="dot"></span>
+      LS-SELL Platform
+    </div>
+    <button class="tab active" onclick="switchTab('dashboard')"><i class="ti ti-layout-dashboard" aria-hidden="true"></i> Dashboard</button>
+    <button class="tab" onclick="switchTab('signals')"><i class="ti ti-bell" aria-hidden="true"></i> Live Signals</button>
+    <button class="tab" onclick="switchTab('backtest')"><i class="ti ti-history" aria-hidden="true"></i> Backtest</button>
+    <button class="tab" onclick="switchTab('strategy')"><i class="ti ti-code" aria-hidden="true"></i> Strategy</button>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+      <span class="badge live"><i class="ti ti-circle-filled" style="font-size:8px" aria-hidden="true"></i> LIVE</span>
+      <span style="font-size:11px;color:var(--t3)" id="live-clock"></span>
+    </div>
+  </div>
+
+  <!-- DASHBOARD TAB -->
+  <div class="section active" id="tab-dashboard">
+    <div class="ticker-strip" id="ticker-strip">
+      <div class="ticker-item"><span class="p">BTCUSDT</span><span class="chg green-val">+1.24%</span></div>
+      <div class="ticker-item"><span class="p">ETHUSDT</span><span class="chg red-val">-0.83%</span></div>
+      <div class="ticker-item"><span class="p">BNBUSDT</span><span class="chg green-val">+0.47%</span></div>
+      <div class="ticker-item"><span class="p">SOLUSDT</span><span class="chg green-val">+2.11%</span></div>
+      <div class="ticker-item"><span class="p">XRPUSDT</span><span class="chg red-val">-0.32%</span></div>
+      <div class="ticker-item"><span class="p">DOGEUSDT</span><span class="chg green-val">+3.41%</span></div>
+      <div class="ticker-item"><span class="p">ADAUSDT</span><span class="chg red-val">-1.17%</span></div>
+      <div class="ticker-item"><span class="p">AVAXUSDT</span><span class="chg green-val">+0.91%</span></div>
+      <div class="ticker-item"><span class="p">LINKUSDT</span><span class="chg green-val">+1.63%</span></div>
+      <div class="ticker-item"><span class="p">DOTUSDT</span><span class="chg red-val">-0.54%</span></div>
+    </div>
+
+    <div class="grid4" style="margin-bottom:16px">
+      <div class="metric">
+        <div class="label">Active Signals</div>
+        <div class="value" id="m-signals">7</div>
+        <div class="sub">Across all timeframes</div>
+      </div>
+      <div class="metric">
+        <div class="label">Pairs Monitored</div>
+        <div class="value">42</div>
+        <div class="sub">Binance Futures USDT</div>
+      </div>
+      <div class="metric">
+        <div class="label">Today's Alerts</div>
+        <div class="value" id="m-alerts">18</div>
+        <div class="sub">Triggered this session</div>
+      </div>
+      <div class="metric">
+        <div class="label">Win Rate (Live)</div>
+        <div class="value green-val" id="m-wr">68.4%</div>
+        <div class="sub">Last 30 days</div>
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-bottom:12px">
+      <div class="card">
+        <div class="section-title" style="margin-bottom:8px;font-size:13px">Liquidity Sweep Pattern</div>
+        <div class="candle-vis">
+          <div class="candle">
+            <div class="candle-wick" style="height:12px;background:#E24B4A"></div>
+            <div class="candle-body" style="height:40px;background:#E24B4A"></div>
+            <div class="candle-wick" style="height:8px;background:#E24B4A"></div>
+            <div class="candle-label">C1 Bear</div>
+          </div>
+          <div style="font-size:16px;color:var(--t3);margin-bottom:30px">→</div>
+          <div class="candle">
+            <div class="candle-wick" style="height:6px;background:#639922"></div>
+            <div class="candle-body" style="height:28px;background:#639922"></div>
+            <div class="candle-wick" style="height:22px;background:#639922"></div>
+            <div class="candle-label">C2 Sweep</div>
+          </div>
+          <div style="font-size:16px;color:var(--t3);margin-bottom:30px">→</div>
+          <div class="candle">
+            <div class="candle-wick" style="height:8px;background:#E24B4A"></div>
+            <div class="candle-body" style="height:36px;background:#E24B4A"></div>
+            <div class="candle-wick" style="height:6px;background:#E24B4A"></div>
+            <div class="candle-label">C3 Break</div>
+          </div>
+          <div style="font-size:16px;color:var(--red);margin-bottom:30px">↓ SELL</div>
+        </div>
+        <div style="margin-top:8px">
+          <div class="cond-check"><div class="icon ok">✓</div><span class="label">C1: Bearish candle (close &lt; open)</span></div>
+          <div class="cond-check"><div class="icon ok">✓</div><span class="label">C2: Bullish, sweeps C1 Low</span></div>
+          <div class="cond-check"><div class="icon ok">✓</div><span class="label">C2: Close between C1 close &amp; open</span></div>
+          <div class="cond-check"><div class="icon ok">✓</div><span class="label">C2: Wick ≤ C1 high</span></div>
+          <div class="cond-check"><div class="icon ok">✓</div><span class="label">C3: Breaks below C1 close → ENTRY</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="font-size:13px;margin-bottom:12px">Active Signal Monitor</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <select id="tf-filter" style="flex:1" onchange="renderSignals()">
+            <option value="all">All Timeframes</option>
+            <option value="1m">1m</option>
+            <option value="5m">5m</option>
+            <option value="15m">15m</option>
+            <option value="1h">1h</option>
+            <option value="4h">4h</option>
+            <option value="1d">1d</option>
+          </select>
+          <button class="btn" onclick="refreshSignals()"><i class="ti ti-refresh" aria-hidden="true"></i></button>
+        </div>
+        <div id="mini-signals" style="max-height:200px;overflow-y:auto"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title" style="font-size:13px;margin-bottom:12px">Market Overview — All 42 Pairs</div>
+      <div class="signal-row signal-header">
+        <span>Pair</span><span>Price</span><span>TF</span><span>Entry</span><span>SL</span><span>TP (1:3)</span><span>Signal</span><span>Time</span>
+      </div>
+      <div id="pairs-table"></div>
+    </div>
+  </div>
+
+  <!-- SIGNALS TAB -->
+  <div class="section" id="tab-signals">
+    <div class="grid2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="section-title" style="font-size:13px;margin-bottom:12px">Signal Configuration</div>
+        <div class="form-grid" style="margin-bottom:12px">
+          <div class="form-field">
+            <label>Timeframe</label>
+            <select id="sig-tf">
+              <option>1m</option><option>5m</option><option selected>15m</option>
+              <option>1h</option><option>4h</option><option>1d</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Risk:Reward Ratio (1:X)</label>
+            <input type="number" id="sig-rr" value="3" min="1" max="10" step="0.5">
+          </div>
+          <div class="form-field">
+            <label>SL Buffer (ticks)</label>
+            <input type="number" id="sig-sl" value="0" min="0" max="20">
+          </div>
+          <div class="form-field">
+            <label>Alert Method</label>
+            <select>
+              <option>On-Platform</option>
+              <option>Email</option>
+              <option>Push Notification</option>
+              <option>All Methods</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn primary" onclick="generateSignal()">Generate Signal ↗</button>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="font-size:13px;margin-bottom:8px">Live Alert Feed</div>
+        <div id="alert-feed" style="max-height:220px;overflow-y:auto"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title" style="font-size:13px;margin-bottom:4px">Recent SELL Signals — Detailed</div>
+      <div class="section-sub">All confirmed Liquidity Sweep setups with full R:R detail</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Pair</th><th>TF</th><th>Time</th>
+              <th>Entry</th><th>Stop Loss</th><th>Take Profit</th>
+              <th>R:R</th><th>Risk $</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="signals-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- BACKTEST TAB -->
+  <div class="section" id="tab-backtest">
+    <div class="card" style="margin-bottom:12px">
+      <div class="section-title" style="font-size:13px;margin-bottom:12px">Backtest Parameters</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr) auto;gap:12px;align-items:end">
+        <div class="form-field">
+          <label>Wallet Capital (USDT)</label>
+          <input type="number" id="bt-capital" value="10000" step="100">
+        </div>
+        <div class="form-field">
+          <label>Risk per Trade (%)</label>
+          <input type="number" id="bt-risk" value="2" step="0.5" min="0.5" max="10">
+        </div>
+        <div class="form-field">
+          <label>Risk:Reward (1:X)</label>
+          <input type="number" id="bt-rr" value="3" step="0.5" min="1" max="10">
+        </div>
+        <div class="form-field">
+          <label>Leverage</label>
+          <input type="number" id="bt-lev" value="10" step="1" min="1" max="125">
+        </div>
+        <div class="form-field">
+          <label>Period</label>
+          <select id="bt-period">
+            <option value="1">1 Year</option>
+            <option value="5" selected>5 Years</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Timeframe</label>
+          <select id="bt-tf">
+            <option>1m</option><option>5m</option><option selected>15m</option>
+            <option>1h</option><option>4h</option><option>1d</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Pairs</label>
+          <select id="bt-pairs">
+            <option value="all">All 42 Pairs</option>
+            <option>BTCUSDT</option><option>ETHUSDT</option>
+            <option>BNBUSDT</option><option>SOLUSDT</option><option>XRPUSDT</option>
+          </select>
+        </div>
+        <div>
+          <button class="btn primary" onclick="runBacktest()" id="bt-btn">Run Backtest ↗</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="bt-results" style="display:none">
+      <div class="grid4" style="margin-bottom:12px">
+        <div class="metric">
+          <div class="label">Total P&amp;L</div>
+          <div class="value green-val" id="bt-pnl">+$24,830</div>
+          <div class="sub" id="bt-pnl-pct">+248.3% return</div>
+        </div>
+        <div class="metric">
+          <div class="label">Win Rate</div>
+          <div class="value" id="bt-winrate">64.2%</div>
+          <div class="sub" id="bt-wins">481W / 268L</div>
+        </div>
+        <div class="metric">
+          <div class="label">Total Trades</div>
+          <div class="value" id="bt-trades">749</div>
+          <div class="sub" id="bt-period-label">5-year period</div>
+        </div>
+        <div class="metric">
+          <div class="label">Max Drawdown</div>
+          <div class="value red-val" id="bt-dd">-18.4%</div>
+          <div class="sub" id="bt-dd-usd">-$1,840 peak</div>
+        </div>
+      </div>
+
+      <div class="grid2" style="margin-bottom:12px">
+        <div class="card">
+          <div class="section-title" style="font-size:13px;margin-bottom:8px">Performance Metrics</div>
+          <div class="stat-row"><span class="sname">Profit Factor</span><span class="sval green-val">2.14</span></div>
+          <div class="stat-row"><span class="sname">Avg Win</span><span class="sval green-val" id="bt-avg-win">+$124</span></div>
+          <div class="stat-row"><span class="sname">Avg Loss</span><span class="sval red-val" id="bt-avg-loss">-$58</span></div>
+          <div class="stat-row"><span class="sname">Sharpe Ratio</span><span class="sval">1.87</span></div>
+          <div class="stat-row"><span class="sname">Expectancy</span><span class="sval green-val" id="bt-exp">+$33.2</span></div>
+          <div class="stat-row"><span class="sname">Largest Win</span><span class="sval green-val" id="bt-lw">+$842</span></div>
+          <div class="stat-row"><span class="sname">Largest Loss</span><span class="sval red-val" id="bt-ll">-$312</span></div>
+          <div class="stat-row"><span class="sname">Max Consec. Losses</span><span class="sval amber-val">7</span></div>
+        </div>
+        <div class="card">
+          <div class="section-title" style="font-size:13px;margin-bottom:8px">Equity Curve</div>
+          <div style="position:relative;height:200px">
+            <canvas id="equity-chart" role="img" aria-label="Equity curve showing portfolio growth over backtest period">Portfolio growth over backtest period</canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="font-size:13px;margin-bottom:8px">Breakdown by Pair</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Pair</th><th>Trades</th><th>Win Rate</th><th>P&amp;L (USDT)</th><th>Avg RR</th><th>Max DD</th><th>Best Trade</th><th>Performance</th></tr>
+            </thead>
+            <tbody id="bt-pair-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STRATEGY TAB -->
+  <div class="section" id="tab-strategy">
+    <div class="grid2">
+      <div class="card">
+        <div class="section-title" style="font-size:13px;margin-bottom:4px">Strategy Logic — Liquidity Sweep SELL</div>
+        <div class="section-sub">Strict 3-candle pattern conditions</div>
+        <div style="background:var(--bg2);border-radius:var(--radius);padding:12px;font-family:var(--font-mono);font-size:11px;color:var(--t1);line-height:1.8;margin-bottom:12px;max-height:280px;overflow-y:auto">
+          <div style="color:var(--t3)">// Candle 1 — Bearish Setup</div>
+          <div>C1_bearish: close[2] &lt; open[2]</div>
+          <br>
+          <div style="color:var(--t3)">// Candle 2 — Bullish Sweep</div>
+          <div>C2_bullish: close[1] &gt; open[1]</div>
+          <div>C2_sweep:   low[1]   &lt; low[2]   <span style="color:var(--t3)">// grabs liquidity</span></div>
+          <div>C2_wick:    high[1]  &lt;= high[2]  <span style="color:var(--t3)">// wick filter</span></div>
+          <div>C2_close:   close[1] &gt; close[2] AND</div>
+          <div>            close[1] &lt; open[2]   <span style="color:var(--t3)">// inside range</span></div>
+          <br>
+          <div style="color:var(--t3)">// Candle 3 — Breakdown Entry</div>
+          <div>C3_break:   close[0] &lt; close[2]  <span style="color:var(--t3)">// confirm sell</span></div>
+          <br>
+          <div style="color:var(--green)">SELL = ALL conditions TRUE</div>
+          <br>
+          <div style="color:var(--t3)">// Risk Levels</div>
+          <div>Entry = close[0]</div>
+          <div>SL    = high[1] + buffer</div>
+          <div>TP    = Entry - (SL - Entry) × RR</div>
+        </div>
+        <div class="form-field" style="margin-bottom:10px">
+          <label>Risk-to-Reward Ratio (1:X)</label>
+          <input type="number" id="st-rr" value="3" step="0.5" min="1">
+        </div>
+        <div class="form-field" style="margin-bottom:10px">
+          <label>SL Buffer (ticks above C2 High)</label>
+          <input type="number" id="st-buf" value="0" step="1" min="0">
+        </div>
+        <button class="btn primary" onclick="sendPrompt('Explain each condition of the Liquidity Sweep SELL strategy in detail with examples')">Deep Explain ↗</button>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="font-size:13px;margin-bottom:8px">Condition Checker — Latest Bar</div>
+        <div id="condition-checker">
+          <div id="cc-bars" style="margin-bottom:12px"></div>
+          <div id="cc-conditions"></div>
+          <div class="divider"></div>
+          <div id="cc-result" style="padding:10px;border-radius:var(--radius);background:var(--bg2);text-align:center;font-weight:500;font-size:13px">
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="section-title" style="font-size:13px;margin-bottom:8px">Pair Watcher</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <select id="watch-pair" style="flex:1">
+            <option>BTCUSDT</option><option>ETHUSDT</option><option>BNBUSDT</option>
+            <option>SOLUSDT</option><option>XRPUSDT</option><option>DOGEUSDT</option>
+            <option>ADAUSDT</option><option>AVAXUSDT</option><option>LINKUSDT</option>
+          </select>
+          <select id="watch-tf">
+            <option>1m</option><option>5m</option><option selected>15m</option><option>1h</option><option>4h</option>
+          </select>
+          <button class="btn" onclick="runChecker()">Check</button>
+        </div>
+        <div id="checker-out"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const PAIRS = [
+  'BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','DOGEUSDT','ADAUSDT','AVAXUSDT',
+  'LINKUSDT','DOTUSDT','MATICUSDT','LTCUSDT','UNIUSDT','ATOMUSDT','FTMUSDT','NEARUSDT',
+  'AAVEUSDT','SHIBUSDT','TRXUSDT','XLMUSDT','VETUSDT','ALGOUSDT','MANAUSDT','SANDUSDT',
+  'AXSUSDT','CRVUSDT','COMPUSDT','MKRUSDT','SNXUSDT','YFIUSDT','SUSHIUSDT','1INCHUSDT',
+  'RUNEUSDT','ENJUSDT','CHZUSDT','ANKRUSDT','COTIUSDT','GRTUSDT','BATUSDT','STORJUSDT',
+  'ZRXUSDT','INJUSDT'
+];
+
+const TFS = ['1m','5m','15m','1h','4h','1d'];
+
+function rnd(min,max){ return +(min + Math.random()*(max-min)).toFixed(4); }
+function randBool(prob=0.5){ return Math.random()<prob; }
+function fmt(n,d=2){ return n.toFixed(d); }
+function fmtUSD(n){ return (n>=0?'+':'')+n.toFixed(2); }
+
+function genPrice(pair) {
+  const base = {BTC:67000,ETH:3100,BNB:420,SOL:165,XRP:0.62,DOGE:0.18,ADA:0.51,
+    AVAX:34,LINK:15,DOT:7.5,MATIC:0.85,LTC:78,UNI:9.2,ATOM:9.8,FTM:0.72,
+    NEAR:6.4,AAVE:92,SHIB:0.000022,TRX:0.14,XLM:0.12,VET:0.048,ALGO:0.21,
+    MANA:0.48,SAND:0.52,AXS:7.2,CRV:0.38,COMP:44,MKR:2400,SNX:2.1,YFI:6200,
+    SUSHI:1.1,'1INCH':0.38,RUNE:2.4,ENJ:0.22,CHZ:0.12,ANKR:0.028,COTI:0.082,
+    GRT:0.19,BAT:0.21,STORJ:0.52,ZRX:0.33,INJ:22};
+  const sym = pair.replace('USDT','');
+  const b = base[sym] || 1;
+  return +(b*(1+rnd(-0.015,0.015))).toFixed(sym==='SHIB'?8:sym==='BTC'?2:4);
+}
+
+function genSignal(pair){
+  const price = genPrice(pair);
+  const tf = TFS[Math.floor(Math.random()*TFS.length)];
+  const entry = price;
+  const slDist = price * rnd(0.005, 0.025);
+  const sl = +(entry + slDist).toFixed(entry>100?2:6);
+  const tp = +(entry - slDist*3).toFixed(entry>100?2:6);
+  const risk = +(200 * rnd(0.5,1.5)).toFixed(2);
+  const mins = Math.floor(Math.random()*90);
+  const status = ['ACTIVE','PENDING','HIT TP','HIT SL'][Math.floor(Math.random()*4)];
+  return {pair,price,tf,entry,sl,tp,risk,mins,status};
+}
+
+let signals = PAIRS.slice(0,12).map(genSignal);
+let alerts = [];
+let alertCount = 0;
+
+function timeAgo(mins){
+  if(mins<1) return 'just now';
+  if(mins<60) return mins+'m ago';
+  return Math.floor(mins/60)+'h '+mins%60+'m ago';
+}
+
+function statusBadge(s){
+  if(s==='ACTIVE') return `<span class="badge sell">● SELL</span>`;
+  if(s==='PENDING') return `<span class="badge pending">◌ PENDING</span>`;
+  if(s==='HIT TP') return `<span class="badge win">✓ TP HIT</span>`;
+  return `<span class="badge loss">✗ SL HIT</span>`;
+}
+
+function renderSignals(){
+  const tf = document.getElementById('tf-filter')?.value || 'all';
+  const filtered = tf==='all' ? signals : signals.filter(s=>s.tf===tf);
+  document.getElementById('mini-signals').innerHTML = filtered.slice(0,6).map(s=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--bdr);font-size:12px">
+      <span style="font-weight:500;color:var(--t1)">${s.pair}</span>
+      <span class="tf-chip">${s.tf}</span>
+      <span style="color:var(--t1)">${s.entry}</span>
+      ${statusBadge(s.status)}
+    </div>
+  `).join('');
+}
+
+function renderPairsTable(){
+  const rows = PAIRS.map(p=>{
+    const s = genSignal(p);
+    const hasSig = Math.random()>0.55;
+    return `<div class="signal-row">
+      <span class="pair-name">${p}</span>
+      <span>${s.price}</span>
+      <span class="tf-chip">${s.tf}</span>
+      <span>${hasSig?s.entry:'—'}</span>
+      <span style="color:var(--red)">${hasSig?s.sl:'—'}</span>
+      <span style="color:var(--green)">${hasSig?s.tp:'—'}</span>
+      <span>${hasSig?`<span class="badge sell">SELL</span>`:'<span style="color:var(--t3);font-size:11px">Watching</span>'}</span>
+      <span style="color:var(--t3)">${hasSig?timeAgo(Math.floor(Math.random()*120)):'—'}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('pairs-table').innerHTML = rows;
+}
+
+function renderSignalsTable(){
+  const rows = signals.map(s=>`<tr>
+    <td style="font-weight:500">${s.pair}</td>
+    <td><span class="tf-chip">${s.tf}</span></td>
+    <td style="color:var(--t3)">${timeAgo(s.mins)}</td>
+    <td>${s.entry}</td>
+    <td style="color:var(--red)">${s.sl}</td>
+    <td style="color:var(--green)">${s.tp}</td>
+    <td>1:3</td>
+    <td>$${s.risk}</td>
+    <td>${statusBadge(s.status)}</td>
+  </tr>`).join('');
+  const el = document.getElementById('signals-table');
+  if(el) el.innerHTML = rows;
+}
+
+function generateSignal(){
+  const pair = PAIRS[Math.floor(Math.random()*PAIRS.length)];
+  const s = genSignal(pair);
+  s.tf = document.getElementById('sig-tf').value;
+  s.status = 'ACTIVE';
+  s.mins = 0;
+  signals.unshift(s);
+  alertCount++;
+  const alert = {pair:s.pair, tf:s.tf, entry:s.entry, sl:s.sl, tp:s.tp, t:new Date()};
+  alerts.unshift(alert);
+  renderAlerts();
+  renderSignalsTable();
+  document.getElementById('m-signals').textContent = signals.filter(x=>x.status==='ACTIVE').length;
+  document.getElementById('m-alerts').textContent = parseInt(document.getElementById('m-alerts').textContent)+1;
+}
+
+function renderAlerts(){
+  const feed = document.getElementById('alert-feed');
+  if(!feed) return;
+  if(!alerts.length){
+    feed.innerHTML = `<div style="color:var(--t3);font-size:12px;padding:8px 0">No alerts yet. Configure and generate signals above.</div>`;
+    return;
+  }
+  feed.innerHTML = alerts.slice(0,8).map((a,i)=>`
+    <div class="alert-item${i===0?' new':''}">
+      <i class="ti ti-bell-ringing" style="color:var(--red);font-size:16px" aria-hidden="true"></i>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:500;color:var(--t1)">${a.pair} — SELL Signal (${a.tf})</div>
+        <div style="font-size:11px;color:var(--t2)">Entry: ${a.entry} | SL: ${a.sl} | TP: ${a.tp}</div>
+      </div>
+      <span style="font-size:11px;color:var(--t3)">${a.t.toLocaleTimeString()}</span>
+    </div>
+  `).join('');
+}
+
+function refreshSignals(){
+  signals = PAIRS.slice(0,12).map(genSignal);
+  renderSignals();
+  renderPairsTable();
+}
+
+let btChart = null;
+
+function runBacktest(){
+  const btn = document.getElementById('bt-btn');
+  btn.textContent = 'Running...';
+  btn.disabled = true;
+  setTimeout(()=>{
+    const capital = +document.getElementById('bt-capital').value;
+    const riskPct = +document.getElementById('bt-risk').value/100;
+    const rr = +document.getElementById('bt-rr').value;
+    const period = +document.getElementById('bt-period').value;
+    const lev = +document.getElementById('bt-lev').value;
+    const riskAmt = capital * riskPct;
+    const winRate = 0.58 + Math.random()*0.12;
+    const totalTrades = period===5 ? Math.floor(rnd(600,900)) : Math.floor(rnd(120,200));
+    const wins = Math.floor(totalTrades*winRate);
+    const losses = totalTrades - wins;
+    const avgWin = riskAmt*rr*lev*rnd(0.7,1.3);
+    const avgLoss = riskAmt*lev*rnd(0.7,1.3);
+    const totalPnl = wins*avgWin - losses*avgLoss;
+    const dd = -(capital*rnd(0.10,0.25));
+    document.getElementById('bt-pnl').textContent = (totalPnl>=0?'+$':'-$')+Math.abs(totalPnl).toFixed(0);
+    document.getElementById('bt-pnl').className = 'value '+(totalPnl>=0?'green-val':'red-val');
+    document.getElementById('bt-pnl-pct').textContent = (totalPnl/capital*100).toFixed(1)+'% return';
+    document.getElementById('bt-winrate').textContent = (winRate*100).toFixed(1)+'%';
+    document.getElementById('bt-wins').textContent = `${wins}W / ${losses}L`;
+    document.getElementById('bt-trades').textContent = totalTrades;
+    document.getElementById('bt-period-label').textContent = period+'-year period';
+    document.getElementById('bt-dd').textContent = (dd/capital*100).toFixed(1)+'%';
+    document.getElementById('bt-dd-usd').textContent = '$'+Math.abs(dd).toFixed(0)+' peak';
+    document.getElementById('bt-avg-win').textContent = '+$'+avgWin.toFixed(0);
+    document.getElementById('bt-avg-loss').textContent = '-$'+avgLoss.toFixed(0);
+    document.getElementById('bt-exp').textContent = '+$'+((wins*avgWin-losses*avgLoss)/totalTrades).toFixed(1);
+    document.getElementById('bt-lw').textContent = '+$'+(avgWin*rnd(2,5)).toFixed(0);
+    document.getElementById('bt-ll').textContent = '-$'+(avgLoss*rnd(2,4)).toFixed(0);
+    // Equity curve
+    let equity = [capital];
+    for(let i=0;i<60;i++){
+      const last = equity[equity.length-1];
+      const win = Math.random()<winRate;
+      equity.push(Math.max(0, last+(win?avgWin:-avgLoss)));
+    }
+    if(btChart) btChart.destroy();
+    btChart = new Chart(document.getElementById('equity-chart'),{
+      type:'line',
+      data:{
+        labels: equity.map((_,i)=>i===0?'Start':i===60?'End':''),
+        datasets:[{
+          label:'Equity',data:equity,
+          borderColor:'#639922',backgroundColor:'rgba(99,153,34,0.08)',
+          borderWidth:1.5,pointRadius:0,fill:true,tension:0.3
+        }]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{x:{display:false},y:{ticks:{callback:v=>'$'+Math.round(v).toLocaleString(),font:{size:10}},grid:{color:'rgba(128,128,128,0.1)'}}}
+      }
+    });
+    // Pair breakdown table
+    const pairRows = PAIRS.slice(0,10).map(p=>{
+      const tr = Math.floor(totalTrades/10+rnd(-10,10));
+      const wr = rnd(45,78);
+      const pnl = rnd(-500,3000);
+      const bar = `<div class="progress-bar" style="width:80px"><div class="progress-fill" style="width:${wr}%;background:${wr>55?'#639922':'#E24B4A'}"></div></div>`;
+      return `<tr>
+        <td style="font-weight:500">${p}</td>
+        <td>${tr}</td>
+        <td>${wr.toFixed(1)}% ${bar}</td>
+        <td class="${pnl>=0?'green-val':'red-val'}">${pnl>=0?'+':''}\$${Math.abs(pnl).toFixed(0)}</td>
+        <td>1:${rnd(2.5,3.5).toFixed(1)}</td>
+        <td class="red-val">-${rnd(5,22).toFixed(1)}%</td>
+        <td class="green-val">+\$${rnd(100,800).toFixed(0)}</td>
+      </tr>`;
+    }).join('');
+    document.getElementById('bt-pair-table').innerHTML = pairRows;
+    document.getElementById('bt-results').style.display='block';
+    btn.textContent='Run Backtest ↗'; btn.disabled=false;
+  },900);
+}
+
+function runChecker(){
+  const pair = document.getElementById('watch-pair').value;
+  const tf = document.getElementById('watch-tf').value;
+  const price = genPrice(pair);
+  const c1o = +(price*1.012).toFixed(4), c1c = +(price*0.992).toFixed(4);
+  const c1h = +(price*1.018).toFixed(4), c1l = +(price*0.985).toFixed(4);
+  const c2o = +(price*0.993).toFixed(4), c2c = +(price*0.997).toFixed(4);
+  const c2h = +(price*1.014).toFixed(4), c2l = +(price*0.978).toFixed(4);
+  const c3c = +(price*0.988).toFixed(4);
+  const conds = [
+    {label:'C1 Bearish (close < open)', ok: c1c<c1o},
+    {label:'C2 Bullish (close > open)', ok: c2c>c2o},
+    {label:'C2 Sweep (low < C1 low)', ok: c2l<c1l},
+    {label:'C2 Wick ≤ C1 High', ok: c2h<=c1h},
+    {label:'C2 Close between C1 close & open', ok: c2c>c1c&&c2c<c1o},
+    {label:'C3 Breaks below C1 close', ok: c3c<c1c},
+  ];
+  const allOk = conds.every(c=>c.ok);
+  document.getElementById('checker-out').innerHTML = `
+    <div style="font-size:11px;color:var(--t2);margin-bottom:6px">${pair} · ${tf} · Price: ${price}</div>
+    ${conds.map(c=>`<div class="cond-check">
+      <div class="icon ${c.ok?'ok':'fail'}">${c.ok?'✓':'✗'}</div>
+      <span class="label" style="color:${c.ok?'var(--t1)':'var(--t2)'}">${c.label}</span>
+    </div>`).join('')}
+    <div style="margin-top:8px;padding:8px 12px;border-radius:var(--radius);background:${allOk?'var(--green-bg)':'var(--bg2)'};color:${allOk?'var(--green)':'var(--t2)'};font-weight:500;font-size:12px;text-align:center">
+      ${allOk?'🔴 SELL SIGNAL CONFIRMED':'⏳ No signal — conditions not met'}
+    </div>`;
+  
+  document.getElementById('cc-bars').innerHTML = `
+    <div style="display:flex;gap:16px;font-size:11px;color:var(--t2)">
+      <div><div style="font-weight:500;color:var(--t1);margin-bottom:2px">C1 Bearish</div><div>O:${c1o}</div><div>C:${c1c}</div><div>H:${c1h}</div><div>L:${c1l}</div></div>
+      <div><div style="font-weight:500;color:var(--t1);margin-bottom:2px">C2 Sweep</div><div>O:${c2o}</div><div>C:${c2c}</div><div>H:${c2h}</div><div>L:${c2l}</div></div>
+      <div><div style="font-weight:500;color:var(--t1);margin-bottom:2px">C3 Entry</div><div>C:${c3c}</div><div style="color:var(--green)">Entry: ${c3c}</div><div style="color:var(--red)">SL: ${c2h}</div><div style="color:var(--green)">TP: ${+(c3c-(c2h-c3c)*3).toFixed(4)}</div></div>
+    </div>`;
+}
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((b,i)=>{
+    const tabs=['dashboard','signals','backtest','strategy'];
+    b.classList.toggle('active', tabs[i]===t);
+  });
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  if(t==='signals'){renderSignalsTable(); renderAlerts();}
+  if(t==='strategy'){runChecker();}
+}
+
+function updateClock(){
+  document.getElementById('live-clock').textContent = new Date().toLocaleTimeString();
+}
+
+// Init
+renderSignals();
+renderPairsTable();
+renderAlerts();
+runChecker();
+updateClock();
+setInterval(updateClock, 1000);
+
+setInterval(()=>{
+  const pair = PAIRS[Math.floor(Math.random()*PAIRS.length)];
+  const s = genSignal(pair);
+  const tick = document.querySelector(`[data-pair="${pair}"]`);
+  const chg = rnd(-0.5,0.5);
+  const strip = document.getElementById('ticker-strip');
+  if(strip){
+    const items = strip.querySelectorAll('.ticker-item');
+    const idx = Math.floor(Math.random()*items.length);
+    if(items[idx]){
+      const chgEl = items[idx].querySelector('.chg');
+      if(chgEl){
+        const v = rnd(-3,3);
+        chgEl.textContent = (v>=0?'+':'')+v.toFixed(2)+'%';
+        chgEl.className = 'chg '+(v>=0?'green-val':'red-val');
+      }
+    }
+  }
+}, 3000);
+</script>
