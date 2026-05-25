@@ -717,7 +717,9 @@ function runBacktest(){
   },900);
 }
 
-function runChecker(){
+function runChecker(){ '; const tfMap = {'1m':'1m','5m':'5m','15m':'15m','1h':'1h','4h':'4h'}; const interval = tfMap[tf] || '15m'; let c1o,c1c,c1h,c1l,c2o,c2c,c2h,c2l,c3c,price; try { const res = await fetch( \`https://api.binance.com/api/v3/klines?symbol=\${pair}&interval=\${interval}&limit=4\` ); const klines = await res.json(); const toNum = n => parseFloat(n); const k1 = klines[0], k2 = klines[1], k3 = klines[2]; c1o=toNum(k1[1]); c1h=toNum(k1[2]); c1l=toNum(k1[3]); c1c=toNum(k1[4]); c2o=toNum(k2[1]); c2h=toNum(k2[2]); c2l=toNum(k2[3]); c2c=toNum(k2[4]); c3c=toNum(k3[4]); price=toNum(klines[3][4]); } catch(e) { document.getElementById('checker-out').innerHTML = '
+Could not fetch candles. Check your internet.
+'; return; }`)">Copyasync function runChecker() { const pair = document.getElementById('watch-pair').value; const tf = document.getElementById('watch-tf').value; document.getElementById('checker-out').innerHTML = '<div style="color:var(--t2);font-size:12px">Fetching real candles...</div>'; const tfMap = {'1m':'1m','5m':'5m','15m':'15m','1h':'1h','4h':'4h'}; const interval = tfMap[tf] || '15m'; let c1o,c1c,c1h,c1l,c2o,c2c,c2h,c2l,c3c,price; try { const res = await fetch( `https://api.binance.com/api/v3/klines?symbol=${pair}&interval=${interval}&limit=4` ); const klines = await res.json(); const toNum = n => parseFloat(n); const k1 = klines[0], k2 = klines[1], k3 = klines[2]; c1o=toNum(k1[1]); c1h=toNum(k1[2]); c1l=toNum(k1[3]); c1c=toNum(k1[4]); c2o=toNum(k2[1]); c2h=toNum(k2[2]); c2l=toNum(k2[3]); c2c=toNum(k2[4]); c3c=toNum(k3[4]); price=toNum(klines[3][4]); } catch(e) { document.getElementById('checker-out').innerHTML = '<div style="color:var(--danger)">Could not fetch candles.</div>'; return; }
   const pair = document.getElementById('watch-pair').value;
   const tf = document.getElementById('watch-tf').value;
   const price = genPrice(pair);
@@ -761,7 +763,9 @@ function switchTab(t){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
   if(t==='signals'){renderSignalsTable(); renderAlerts();}
-  if(t==='strategy'){runChecker();}
+  if(t==='strategy'){runChecker('; const tfMap = {'1m':'1m','5m':'5m','15m':'15m','1h':'1h','4h':'4h'}; const interval = tfMap[tf] || '15m'; let c1o,c1c,c1h,c1l,c2o,c2c,c2h,c2l,c3c,price; try { const res = await fetch( \`https://api.binance.com/api/v3/klines?symbol=\${pair}&interval=\${interval}&limit=4\` ); const klines = await res.json(); const toNum = n => parseFloat(n); const k1 = klines[0], k2 = klines[1], k3 = klines[2]; c1o=toNum(k1[1]); c1h=toNum(k1[2]); c1l=toNum(k1[3]); c1c=toNum(k1[4]); c2o=toNum(k2[1]); c2h=toNum(k2[2]); c2l=toNum(k2[3]); c2c=toNum(k2[4]); c3c=toNum(k3[4]); price=toNum(klines[3][4]); } catch(e) { document.getElementById('checker-out').innerHTML = '
+Could not fetch candles. Check your internet.
+'; return; }`)">Copyasync function runChecker() { const pair = document.getElementById('watch-pair').value; const tf = document.getElementById('watch-tf').value; document.getElementById('checker-out').innerHTML = '<div style="color:var(--t2);font-size:12px">Fetching real candles...</div>'; const tfMap = {'1m':'1m','5m':'5m','15m':'15m','1h':'1h','4h':'4h'}; const interval = tfMap[tf] || '15m'; let c1o,c1c,c1h,c1l,c2o,c2c,c2h,c2l,c3c,price; try { const res = await fetch( `https://api.binance.com/api/v3/klines?symbol=${pair}&interval=${interval}&limit=4` ); const klines = await res.json(); const toNum = n => parseFloat(n); const k1 = klines[0], k2 = klines[1], k3 = klines[2]; c1o=toNum(k1[1]); c1h=toNum(k1[2]); c1l=toNum(k1[3]); c1c=toNum(k1[4]); c2o=toNum(k2[1]); c2h=toNum(k2[2]); c2l=toNum(k2[3]); c2c=toNum(k2[4]); c3c=toNum(k3[4]); price=toNum(klines[3][4]); } catch(e) { document.getElementById('checker-out').innerHTML = '<div style="color:var(--danger)">Could not fetch candles.</div>'; return; });}
 }
 
 function updateClock(){
@@ -772,7 +776,9 @@ function updateClock(){
 renderSignals();
 renderPairsTable();
 renderAlerts();
-runChecker();
+runChecker('; const tfMap = {'1m':'1m','5m':'5m','15m':'15m','1h':'1h','4h':'4h'}; const interval = tfMap[tf] || '15m'; let c1o,c1c,c1h,c1l,c2o,c2c,c2h,c2l,c3c,price; try { const res = await fetch( \`https://api.binance.com/api/v3/klines?symbol=\${pair}&interval=\${interval}&limit=4\` ); const klines = await res.json(); const toNum = n => parseFloat(n); const k1 = klines[0], k2 = klines[1], k3 = klines[2]; c1o=toNum(k1[1]); c1h=toNum(k1[2]); c1l=toNum(k1[3]); c1c=toNum(k1[4]); c2o=toNum(k2[1]); c2h=toNum(k2[2]); c2l=toNum(k2[3]); c2c=toNum(k2[4]); c3c=toNum(k3[4]); price=toNum(klines[3][4]); } catch(e) { document.getElementById('checker-out').innerHTML = '
+Could not fetch candles. Check your internet.
+'; return; }`)">Copyasync function runChecker() { const pair = document.getElementById('watch-pair').value; const tf = document.getElementById('watch-tf').value; document.getElementById('checker-out').innerHTML = '<div style="color:var(--t2);font-size:12px">Fetching real candles...</div>'; const tfMap = {'1m':'1m','5m':'5m','15m':'15m','1h':'1h','4h':'4h'}; const interval = tfMap[tf] || '15m'; let c1o,c1c,c1h,c1l,c2o,c2c,c2h,c2l,c3c,price; try { const res = await fetch( `https://api.binance.com/api/v3/klines?symbol=${pair}&interval=${interval}&limit=4` ); const klines = await res.json(); const toNum = n => parseFloat(n); const k1 = klines[0], k2 = klines[1], k3 = klines[2]; c1o=toNum(k1[1]); c1h=toNum(k1[2]); c1l=toNum(k1[3]); c1c=toNum(k1[4]); c2o=toNum(k2[1]); c2h=toNum(k2[2]); c2l=toNum(k2[3]); c2c=toNum(k2[4]); c3c=toNum(k3[4]); price=toNum(klines[3][4]); } catch(e) { document.getElementById('checker-out').innerHTML = '<div style="color:var(--danger)">Could not fetch candles.</div>'; return; });
 updateClock();
 setInterval(updateClock, 1000);
 
